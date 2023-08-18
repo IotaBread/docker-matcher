@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -e
+if [[ $# < 2 ]]; then
+    echo "Usage: match <old version> <new version>"
+    exit 1
+fi
+
+echo "  [i] Building matcher image"
+docker compose build deno
+echo "  [i] Starting containers"
+docker compose up -d
+echo "  [i] Running setup task"
+docker compose exec deno deno task setup $1 $2
+echo "  [i] Setup done"
+
+echo "  [i] Mapping old version jar"
+docker compose exec -w /app/qm/$1 gradle sh -c "gradle mapPerVersionMappingsJar --stacktrace"
+echo "  [i] Mapping new version jar"
+docker compose exec -w /app/qm/$2 gradle sh -c "gradle mapPerVersionMappingsJar --stacktrace"
+echo "  [i] Dropping invalid mappings"
+docker compose exec -w /app/qm/$2 gradle sh -c "gradle dropInvalidMappings --stacktrace"
+echo "  [i] Commiting changes"
+git -C qm/$2 add . && git -C qm/$2 commit -m "$2"
+
+echo "  [i] Matching"
+docker compose exec deno deno task match $1 $2
+echo "  [i] Dropping new invalid mappings, generating package info mappings"
+docker compose exec -w /app/qm/$2 gradle sh -c "gradle dropInvalidMappings generatePackageInfoMappings --stacktrace"
+echo "  [i] Building mappings and javadoc"
+docker compose exec -w /app/qm/$2 gradle sh -c "gradle build javadoc --stacktrace" || (echo "  [X] Build errors detected, please fix them\n\
+    and then run 'git commit -m \"match $2 to $1\"', and 'git push origin $2' from qm/$2" && exit 1)
+echo "  [i] Committing matched changes"
+git -C qm/$2 add . && git -C qm/$2 commit -m "match $2 to $1" || echo "  [i] No changes commited"
+echo "  [i] Stopping containers"
+docker compose stop
+echo "=====\n\
+  [i] Everything done, please check the changes and run 'git push origin $2' from qm/$2"

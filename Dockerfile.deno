@@ -1,0 +1,23 @@
+ARG MATCHER_REPO
+ARG MATCHER_GIT_REF
+FROM denoland/deno:alpine-1.36.1
+
+RUN apk --no-cache add git
+WORKDIR /app
+
+# Clone the matcher
+ENV MATCHER_REPO=${MATCHER_REPO:-https://github.com/ix0rai/matcher.git}
+ENV MATCHER_GIT_REF=${MATCHER_GIT_REF:-7d301ae1a086aa5ebefb89ba3dee2d8195615260}
+RUN git clone ${MATCHER_REPO} . && git reset --hard ${MATCHER_GIT_REF} && git clean -df && \
+    git config user.email "me@example.com" && git config user.name "Me"
+
+# Fix matcher git clone
+COPY 0001-Fix-git-clone.patch /tmp/0001.patch
+RUN git am /tmp/0001.patch && rm /tmp/0001.patch
+
+VOLUME /app/qm
+
+# Apply a patch to write files to qm/ instead of the current working dir
+COPY 0002-Write-to-a-subdir.patch /tmp/0002.patch
+RUN git am /tmp/0002.patch && rm /tmp/0002.patch
+

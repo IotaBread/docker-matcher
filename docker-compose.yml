@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+  deno:
+    image: iotabread/matcher-deno:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.deno
+    command: tail -f /dev/null
+    volumes:
+      - ./qm:/app/qm
+  gradle:
+    image: gradle:7.6-jdk17-alpine
+    working_dir: /app/qm
+    command: tail -f /dev/null
+    volumes:
+      - ./qm:/app/qm
