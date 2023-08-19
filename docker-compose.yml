@@ -15,3 +15,7 @@ services:
     command: tail -f /dev/null
     volumes:
       - ./qm:/app/qm
+      - gradle-cache:/home/gradle/.gradle
+
+volumes:
+  gradle-cache:
