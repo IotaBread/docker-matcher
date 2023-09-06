@@ -5,6 +5,20 @@ if [[ $# < 2 ]]; then
     exit 1
 fi
 
+git_config=$PWD/.gitconfig
+EDITOR=/bin/cat git config --global --edit > $git_config
+export GIT_CONFIG_GLOBAL=$git_config
+
+git_config_override=${git_config}.override
+if [[ -f $git_config_override ]]; then
+    cat $git_config_override >> $git_config
+fi
+
+cat <<EOF >> $git_config
+[safe]
+	directory = $PWD/qm/$2
+EOF
+
 echo "  [i] Building matcher image"
 docker compose build deno
 echo "  [i] Starting containers"
@@ -27,11 +41,13 @@ docker compose exec deno deno task match $1 $2
 echo "  [i] Dropping new invalid mappings, generating package info mappings"
 docker compose exec -w /app/qm/$2 gradle sh -c "gradle dropInvalidMappings generatePackageInfoMappings --stacktrace"
 echo "  [i] Building mappings and javadoc"
-docker compose exec -w /app/qm/$2 gradle sh -c "gradle build javadoc --stacktrace" || (echo "  [X] Build errors detected, please fix them\n\
-    and then run 'git commit -m \"match $2 to $1\"', and 'git push origin $2' from qm/$2" && exit 1)
+docker compose exec -w /app/qm/$2 gradle sh -c "gradle build javadoc --stacktrace"\
+    || (echo "  [X] Build errors detected, please fix them\
+        and then run 'git commit -m \"match $2 to $1\"', and 'git push origin $2' from qm/$2\
+        You might need to add '-c \"safe.directory=\$pwd\"' to each command if there is a warning about ownership" && exit 1)
 echo "  [i] Committing matched changes"
 git -C qm/$2 add . && git -C qm/$2 commit -m "match $2 to $1" || echo "  [i] No changes commited"
 echo "  [i] Stopping containers"
 docker compose stop
-echo "=====\n\
+echo "=====\
   [i] Everything done, please check the changes and run 'git push origin $2' from qm/$2"

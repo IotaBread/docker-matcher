@@ -1,2 +1,5 @@
+.vscode
 qm/
 *.jar
+.gitconfig
+.gitconfig.override
