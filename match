@@ -50,7 +50,7 @@ info "Dropping new invalid mappings, generating package info mappings"
 docker compose exec -w /app/qm/$2 gradle sh -c "gradle dropInvalidMappings generatePackageInfoMappings --stacktrace"
 info "Building mappings and javadoc"
 docker compose exec -w /app/qm/$2 gradle sh -c "gradle build javadoc --stacktrace"\
-    || (eror "Build errors detected, please fix them\
+    || (error "Build errors detected, please fix them\
         and then run 'git commit -m \"match $2 to $1\"', and 'git push origin $2' from qm/$2\
         You might need to add '-c \"safe.directory=\$pwd\"' to each command if there is a warning about ownership" && exit 1)
 info "Committing matched changes"
