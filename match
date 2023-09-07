@@ -42,9 +42,10 @@ trap cleanup SIGINT
 
 info "Running setup task"
 docker compose exec deno deno task setup $1 $2
-info "$ chmod 777 qm/$2/.git"
-docker compose exec deno chmod 777 qm/$2/.git
+info "$ chmod -R a+u qm/$2/.git"
+docker compose exec deno chmod -R a+u qm/$2/.git
 info "Setup done"
+exit 0
 
 info "Mapping old version jar"
 docker compose exec -w /app/qm/$1 gradle sh -c "gradle mapPerVersionMappingsJar --stacktrace"
