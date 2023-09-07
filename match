@@ -42,6 +42,8 @@ trap cleanup SIGINT
 
 info "Running setup task"
 docker compose exec deno deno task setup $1 $2
+info "$ chmod 777 qm/$2/.git"
+docker compose exec deno chmod 777 qm/$2/.git
 info "Setup done"
 
 info "Mapping old version jar"
