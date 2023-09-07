@@ -27,10 +27,19 @@ cat <<EOF >> $git_config
 	directory = $PWD/qm/$2
 EOF
 
+function cleanup {
+    docker compose down
+    exit
+}
+
 info "Building matcher image"
 docker compose build deno
+
 info "Starting containers"
 docker compose up -d
+# Cleanup the containers on SIGINT
+trap cleanup SIGINT
+
 info "Running setup task"
 docker compose exec deno deno task setup $1 $2
 info "Setup done"
