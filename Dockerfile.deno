@@ -7,7 +7,7 @@ WORKDIR /app
 
 # Clone the matcher
 ENV MATCHER_REPO=${MATCHER_REPO:-https://github.com/ix0rai/matcher.git}
-ENV MATCHER_GIT_REF=${MATCHER_GIT_REF:-5f59262c422b3526ad4683c70b5a6f3e931e0ca3}
+ENV MATCHER_GIT_REF=${MATCHER_GIT_REF:-320200232898404e86b211844c647ba2d0d42c31}
 RUN git clone ${MATCHER_REPO} . && git reset --hard ${MATCHER_GIT_REF} && git clean -df && \
     git config user.email "me@example.com" && git config user.name "Me"
 
