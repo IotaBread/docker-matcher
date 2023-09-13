@@ -28,6 +28,7 @@ cat <<EOF >> $git_config
 EOF
 
 function cleanup {
+    info "Aborting..."
     docker compose down
     exit
 }
