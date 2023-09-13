@@ -10,7 +10,7 @@ function info {
 }
 
 function error {
-    echo -e "\033[31m  [X] $1\033[0m"
+    echo -e "\033[91m  [X] $1\033[0m"
 }
 
 git_config=$PWD/.gitconfig
@@ -45,6 +45,15 @@ docker compose exec deno deno task setup $1 $2
 info "$ chmod -R a+u qm/$2/.git"
 docker compose exec deno chmod -R a+u qm/$2/.git
 info "Setup done"
+
+# Allow buildscript changes
+info "Press Enter if you want to make any changes to the buildscript. Otherwise wait 5 seconds"
+if [ $(read -t 5)$? == 0 ]; then
+    info "Press Enter once you have finished the buildscript changes..."
+    read
+fi
+
+info "Continuing normal execution..."
 
 info "Mapping old version jar"
 docker compose exec -w /app/qm/$1 gradle sh -c "gradle mapPerVersionMappingsJar --stacktrace"
