@@ -65,15 +65,24 @@ docker compose exec -w /app/qm/$2 gradle sh -c "gradle dropInvalidMappings --sta
 info "Commiting changes"
 git -C qm/$2 add . && git -C qm/$2 commit -m "$2"
 
+info "Testing ssh connection"
+https_url=$(git -C "qm/$2" remote get-url origin)
+host=$(echo "$https_url" | sed 's/https\?:\/\/\([^\/]*\)\//\1/' )
+if [ $(ssh -T "git@$host" > /dev/null 2>&1)$? == 1 ]; then
+    info "Changing the remote urls to use ssh"
+    url=$(echo "$https_url" | sed 's/https\?:\/\/\([^\/]*\)\//git@\1:/')
+    git -C "qm/$2" remote set-url origin "$url"
+fi
+
 info "Matching"
 docker compose exec deno deno task match $1 $2
 info "Dropping new invalid mappings, generating package info mappings"
 docker compose exec -w /app/qm/$2 gradle sh -c "gradle dropInvalidMappings generatePackageInfoMappings --stacktrace"
 info "Building mappings and javadoc"
 docker compose exec -w /app/qm/$2 gradle sh -c "gradle build javadoc --stacktrace"\
-    || (error "Build errors detected, please fix them\
-        and then run 'git commit -m \"match $2 to $1\"', and 'git push origin $2' from qm/$2\
-        You might need to add '-c \"safe.directory=\$pwd\"' to each command if there is a warning about ownership" && exit 1)
+    || (error "Build errors detected, please fix them\n\
+        Then run 'git add .', 'git commit -m \"match $2 to $1\"', and 'git push origin $2' from qm/$2\n\
+        You might need to set GIT_CONFIG_GLOBAL to \"$git_config\" in the current session if there is a warning about ownership" && exit 1)
 info "Committing matched changes"
 git -C qm/$2 add . && git -C qm/$2 commit -m "match $2 to $1" || info "No changes commited"
 info "Stopping containers"
